@@ -18,33 +18,6 @@ except Exception as e:
     # A real app might have a more graceful error page.
     raise RuntimeError(f"Docker daemon is not running or accessible. Please start Docker. Error: {e}")
 
-def get_container_stats(container_id):
-    """Helper to get container stats. Returns None if container is not running."""
-    try:
-        container = client.containers.get(container_id)
-        if container.status == 'running':
-            stats = container.stats(stream=False)
-            # Calculate CPU percentage
-            cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
-            system_cpu_delta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
-            number_cpus = stats['cpu_stats']['online_cpus']
-            cpu_percent = (cpu_delta / system_cpu_delta) * number_cpus * 100.0 if system_cpu_delta > 0 else 0
-            
-            # Calculate Memory usage
-            mem_usage = stats['memory_stats']['usage'] / (1024*1024) # in MB
-            mem_limit = stats['memory_stats']['limit'] / (1024*1024) # in MB
-            mem_percent = (mem_usage / mem_limit) * 100.0 if mem_limit > 0 else 0
-
-            return {
-                'cpu_percent': f"{cpu_percent:.2f}%",
-                'mem_usage': f"{mem_usage:.2f} MB / {mem_limit:.2f} MB",
-                'mem_percent': f"{mem_percent:.2f}%"
-            }
-    except (APIError, NotFound):
-        pass
-    return None
-
-
 @app.route('/')
 def index():
     """Main dashboard page."""
@@ -63,15 +36,13 @@ def index():
         # Containers list
         all_containers = client.containers.list(all=True)
         
-        # Enrich container data with stats for running containers
         containers_with_stats = []
         for c in all_containers:
             container_data = {
                 'id': c.short_id,
                 'name': c.name,
                 'image': ', '.join(c.image.tags) if c.image.tags else 'N/A',
-                'status': c.status,
-                'stats': get_container_stats(c.id) if c.status == 'running' else None
+                'status': c.status
             }
             containers_with_stats.append(container_data)
 

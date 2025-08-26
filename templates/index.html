@@ -113,8 +113,6 @@
                             <th>Status</th>
                             <th>Name</th>
                             <th>Image</th>
-                            <th>CPU %</th>
-                            <th>Memory Usage</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -126,25 +124,6 @@
                             </td>
                             <td><strong>{{ c.name }}</strong><br><small class="text-muted">{{ c.id }}</small></td>
                             <td>{{ c.image }}</td>
-                            <td>
-                                {% if c.stats %}
-                                    {{ c.stats.cpu_percent }}
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if c.stats %}
-                                    <div class="progress" style="height: 20px;">
-                                      <div class="progress-bar" role="progressbar" style="width: {{ c.stats.mem_percent }};" aria-valuenow="{{ c.stats.mem_percent.replace('%','') }}" aria-valuemin="0" aria-valuemax="100">
-                                        {{ c.stats.mem_percent }}
-                                      </div>
-                                    </div>
-                                    <small class="text-muted">{{ c.stats.mem_usage }}</small>
-                                {% else %}
-                                    N/A
-                                {% endif %}
-                            </td>
                             <td>
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-mdb-toggle="dropdown" aria-expanded="false">
