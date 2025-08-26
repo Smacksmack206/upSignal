@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<section>
+    <!-- Search Docker Hub -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-search me-2"></i>Search Docker Hub</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('images') }}" method="GET">
+                <div class="input-group">
+                    <div class="form-outline flex-grow-1">
+                        <input type="search" id="query" name="query" class="form-control" value="{{ query or '' }}" />
+                        <label class="form-label" for="query">Search for public images...</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search Results -->
+    {% if search_results %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-poll-h me-2"></i>Search Results for "{{ query }}"</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Stars</th>
+                            <th>Official</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in search_results %}
+                        <tr>
+                            <td><strong>{{ result.name }}</strong></td>
+                            <td style="max-width: 400px;">{{ result.description }}</td>
+                            <td><i class="fas fa-star text-warning me-1"></i> {{ result.star_count }}</td>
+                            <td>
+                                {% if result.is_official %}
+                                    <span class="badge badge-success">Yes</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form action="{{ url_for('pull_image') }}" method="POST">
+                                    <input type="hidden" name="image_name" value="{{ result.name }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-download me-1"></i> Pull
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Local Images -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Local Images</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Tags</th>
+                            <th>ID</th>
+                            <th>Size</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for image in images %}
+                        <tr>
+                            <td>{{ image.tags|join(', ') if image.tags else '<none>' }}</td>
+                            <td>{{ image.short_id.replace('sha256:', '') }}</td>
+                            <td>{{ "%.2f"|format(image.attrs['Size'] / (1024*1024)) }} MB</td>
+                            <td>{{ image.attrs['Created'].split('T')[0] }}</td>
+                            <td>
+                                <form action="{{ url_for('remove_image') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this image?');">
+                                    <input type="hidden" name="image_id" value="{{ image.id }}">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash me-1"></i> Remove
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No local images found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
