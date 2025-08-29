@@ -1,4 +1,3 @@
-
 import os
 import json
 from flask import Flask, render_template, request, redirect, url_for, flash
@@ -17,6 +16,47 @@ except Exception as e:
     # If Docker daemon is not running, we can't proceed.
     # A real app might have a more graceful error page.
     raise RuntimeError(f"Docker daemon is not running or accessible. Please start Docker. Error: {e}")
+
+def get_launchable_containers():
+    """
+    Gets a list of running containers with their public-facing port mappings.
+    This is a good example of a helper function that encapsulates a specific piece of logic.
+    It keeps the main route clean and makes the code more modular and testable.
+    """
+    launchable_containers = []
+    try:
+        # We only care about running containers for the launch menu
+        running_containers = client.containers.list(filters={"status": "running"})
+        for container in running_containers:
+            # The container.ports attribute gives us the port mappings
+            # It's a dictionary where keys are the container ports and values are the host bindings
+            ports = container.ports
+            if not ports:
+                continue
+
+            launch_urls = []
+            for container_port, host_bindings in ports.items():
+                if host_bindings:
+                    # A container port can be bound to multiple host ports
+                    for binding in host_bindings:
+                        # We only want to show ports that are bound to an external interface
+                        if binding['HostIp'] == '0.0.0.0':
+                            host_port = binding['HostPort']
+                            # We assume http for simplicity. A more advanced implementation
+                            # might try to detect https.
+                            launch_urls.append(f"http://localhost:{host_port}")
+            
+            if launch_urls:
+                launchable_containers.append({
+                    "name": container.name,
+                    "urls": launch_urls
+                })
+    except APIError as e:
+        # If we can't get the list of containers, we'll just return an empty list
+        # and flash a message to the user. This makes the application more resilient.
+        flash(f"Could not retrieve launchable containers: {e}", "warning")
+
+    return launchable_containers
 
 @app.route('/')
 def index():
@@ -54,12 +94,16 @@ def index():
             }
             containers_with_stats.append(container_data)
 
+        # Get launchable containers
+        launchable_containers = get_launchable_containers()
+
     except APIError as e:
         flash(f"Error connecting to Docker: {e}", "danger")
         info_display = {}
         containers_with_stats = []
+        launchable_containers = []
 
-    return render_template('index.html', info=info_display, containers=containers_with_stats)
+    return render_template('index.html', info=info_display, containers=containers_with_stats, launchable_containers=launchable_containers)
 
 @app.route('/container/<container_id>/<action>', methods=['POST'])
 def container_action(container_id, action):
