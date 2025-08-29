@@ -50,11 +50,34 @@ upSignal provides a clean, responsive, and feature-rich web interface for managi
     git clone https://github.com/your-username/upSignal.git
     cd upSignal
     ```
-2.  **Build and run the Docker container:**
+2.  **Run the application:**
     ```bash
-    docker-compose up -d --build
+    ./start.sh up -d --build
     ```
 3.  **Open your browser and navigate to `http://localhost:5001`**
+
+## Usage
+
+The `start.sh` script is a wrapper around `docker-compose` that automatically handles OS-specific configuration. You can use it to manage the application just like you would with `docker-compose`.
+
+**Common commands:**
+
+*   **Start the application in detached mode:**
+    ```bash
+    ./start.sh up -d
+    ```
+*   **Stop the application:**
+    ```bash
+    ./start.sh down
+    ```
+*   **View logs:**
+    ```bash
+    ./start.sh logs
+    ```
+*   **Rebuild the image and restart the service:**
+    ```bash
+    ./start.sh up -d --build
+    ```
 
 ## Future Vision: From Project to Product
 

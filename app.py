@@ -34,14 +34,22 @@ def index():
         }
 
         # Containers list
-        all_containers = client.containers.list(all=True)
+        try:
+            all_containers = client.containers.list(all=True)
+        except APIError as e:
+            flash(f"Error listing containers: {e}", "danger")
+            all_containers = []
         
         containers_with_stats = []
         for c in all_containers:
+            try:
+                image_tags = ', '.join(c.image.tags) if c.image.tags else 'N/A'
+            except docker.errors.NotFound:
+                image_tags = '[Image not found]'
             container_data = {
                 'id': c.short_id,
                 'name': c.name,
-                'image': ', '.join(c.image.tags) if c.image.tags else 'N/A',
+                'image': image_tags,
                 'status': c.status
             }
             containers_with_stats.append(container_data)
