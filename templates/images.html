@@ -22,7 +22,7 @@
         </div>
     </div>
 
-    <!-- Search Results -->
+    {#     <!-- Search Results -->
     {% if search_results %}
     <div class="card mb-4">
         <div class="card-header">
@@ -68,7 +68,7 @@
             </div>
         </div>
     </div>
-    {% endif %}
+    {% endif %} #}
 
     <!-- Local Images -->
     <div class="card">
@@ -93,7 +93,7 @@
                             <td>{{ image.tags|join(', ') if image.tags else '<none>' }}</td>
                             <td>{{ image.short_id.replace('sha256:', '') }}</td>
                             <td>{{ "%.2f"|format(image.attrs['Size'] / (1024*1024)) }} MB</td>
-                            <td>{{ image.attrs['Created'].split('T')[0] }}</td>
+                            <td>{{ image.attrs.get('Created', 'N/A').split('T')[0] if image.attrs.get('Created') else 'N/A' }}</td>
                             <td>
                                 <form action="{{ url_for('remove_image') }}" method="POST" onsubmit="return confirm('Are you sure you want to remove this image?');">
                                     <input type="hidden" name="image_id" value="{{ image.id }}">

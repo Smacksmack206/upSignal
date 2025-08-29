@@ -94,16 +94,12 @@ def index():
             }
             containers_with_stats.append(container_data)
 
-        # Get launchable containers
-        launchable_containers = get_launchable_containers()
-
     except APIError as e:
         flash(f"Error connecting to Docker: {e}", "danger")
         info_display = {}
         containers_with_stats = []
-        launchable_containers = []
 
-    return render_template('index.html', info=info_display, containers=containers_with_stats, launchable_containers=launchable_containers)
+    return render_template('index.html', info=info_display, containers=containers_with_stats)
 
 @app.route('/container/<container_id>/<action>', methods=['POST'])
 def container_action(container_id, action):
@@ -154,6 +150,13 @@ def container_details(container_id):
         flash(f"Error getting details for container {container_id}: {e}", "danger")
         return redirect(url_for('index'))
     return render_template('details.html', container_name=container.name, details=details_str)
+
+@app.route('/launch')
+def launch():
+    """Launch menu page."""
+    launchable_containers = get_launchable_containers()
+    return render_template('launch.html', launchable_containers=launchable_containers)
+
 
 @app.route('/run', methods=['POST'])
 def run_container():
