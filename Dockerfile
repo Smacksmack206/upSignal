@@ -14,11 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Make port 5001 available to the world outside this container
-EXPOSE 5001
+EXPOSE 5050
 
 # Define environment variable
 ENV FLASK_APP app.py
 
 # Run app.py when the container launches
 # Use gunicorn for a more production-ready server
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--timeout", "120", "app:app"]

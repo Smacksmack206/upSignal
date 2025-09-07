@@ -4,6 +4,6 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "5001:5001"
+      - "5050:5050"
     volumes:
-      - ${DOCKER_SOCKET_PATH}:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
