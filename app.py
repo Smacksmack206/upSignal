@@ -1,8 +1,9 @@
 import os
 import json
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, Response
 import docker
 from docker.errors import APIError, NotFound
+import requests
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -152,11 +153,116 @@ def container_details(container_id):
         return redirect(url_for('index'))
     return render_template('details.html', container_name=container.name, details=details_str)
 
+@app.route('/assets/<path:path>')
+def proxy_umbrel_assets(path):
+    """Proxy Umbrel asset requests."""
+    try:
+        url = f"http://host.docker.internal:8991/assets/{path}"
+        resp = requests.get(url, stream=True, timeout=10)
+        
+        def generate():
+            for chunk in resp.iter_content(chunk_size=1024):
+                yield chunk
+        
+        response = Response(generate(), resp.status_code)
+        
+        for key, value in resp.headers.items():
+            if key.lower() != 'content-length':
+                response.headers[key] = value
+        
+        return response
+        
+    except requests.exceptions.RequestException as e:
+        return Response(f"Asset proxy error: {e}", status=502)
+
+@app.route('/locales/<path:path>')
+def proxy_umbrel_locales(path):
+    """Proxy Umbrel locale files."""
+    try:
+        url = f"http://host.docker.internal:8991/locales/{path}"
+        resp = requests.get(url, stream=True, timeout=10)
+        
+        def generate():
+            for chunk in resp.iter_content(chunk_size=1024):
+                yield chunk
+        
+        response = Response(generate(), resp.status_code)
+        
+        for key, value in resp.headers.items():
+            if key.lower() != 'content-length':
+                response.headers[key] = value
+        
+        return response
+        
+    except requests.exceptions.RequestException as e:
+        return Response(f"Locales proxy error: {e}", status=502)
+
+@app.route('/trpc/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def proxy_umbrel_trpc(path):
+    """Proxy Umbrel tRPC API requests."""
+    try:
+        url = f"http://host.docker.internal:8991/trpc/{path}"
+        resp = requests.request(
+            method=request.method,
+            url=url,
+            params=request.args,
+            data=request.get_data(),
+            headers={k: v for k, v in request.headers if k.lower() != 'host'},
+            stream=True,
+            timeout=10
+        )
+        
+        def generate():
+            for chunk in resp.iter_content(chunk_size=1024):
+                yield chunk
+        
+        response = Response(generate(), resp.status_code)
+        
+        for key, value in resp.headers.items():
+            if key.lower() != 'content-length':
+                response.headers[key] = value
+        
+        return response
+        
+    except requests.exceptions.RequestException as e:
+        return Response(f"tRPC proxy error: {e}", status=502)
+
+@app.route('/proxy/umbrel/', defaults={'path': ''})
+@app.route('/proxy/umbrel/<path:path>')
+def proxy_umbrel(path=''):
+    """Proxy all requests to Umbrel to bypass CSP restrictions."""
+    try:
+        url = f"http://host.docker.internal:8991/{path}"
+        resp = requests.request(
+            method=request.method,
+            url=url,
+            params=request.args,
+            data=request.get_data(),
+            headers={k: v for k, v in request.headers if k.lower() != 'host'},
+            stream=True,
+            timeout=10
+        )
+        
+        def generate():
+            for chunk in resp.iter_content(chunk_size=1024):
+                yield chunk
+        
+        response = Response(generate(), resp.status_code)
+        
+        # Copy headers but remove CSP and X-Frame-Options that block framing
+        for key, value in resp.headers.items():
+            if key.lower() not in ['content-security-policy', 'x-frame-options', 'content-length']:
+                response.headers[key] = value
+        
+        return response
+        
+    except requests.exceptions.RequestException as e:
+        return Response(f"Proxy error: {e}", status=502)
+
 @app.route('/launch')
 def launch():
     """Launch menu page."""
     launchable_containers = get_launchable_containers()
-    flash(f"Launchable containers: {launchable_containers}", "info") # Debugging line
     return render_template('launch.html', launchable_containers=launchable_containers)
 
 

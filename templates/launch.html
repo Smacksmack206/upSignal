@@ -74,7 +74,13 @@ function showIframe(url, containerName) {
     const iframe = document.getElementById('container-iframe');
     const title = document.getElementById('iframe-title');
     
-    iframe.src = url;
+    // Check if this is Umbrel (port 8991) and use proxy
+    let iframeUrl = url;
+    if (url.includes(':8991') || containerName.toLowerCase().includes('umbrel')) {
+        iframeUrl = '/proxy/umbrel/';
+    }
+    
+    iframe.src = iframeUrl;
     title.textContent = `${containerName} - ${url}`;
     iframeContainer.style.display = 'block';
     
