@@ -32,27 +32,24 @@ def get_launchable_containers():
             # The container.ports attribute gives us the port mappings
             # It's a dictionary where keys are the container ports and values are the host bindings
             ports = container.ports
-            if not ports:
-                continue
-
             launch_urls = []
-            for container_port, host_bindings in ports.items():
-                if host_bindings:
-                    # A container port can be bound to multiple host ports
-                    for binding in host_bindings:
-                        # We only want to show ports that are bound to an external interface
-                        # We want to show all host ports, regardless of HostIp
-                        host_port = binding['HostPort']
-                        # We assume http for simplicity. A more advanced implementation
-                        # might try to detect https.
-                        launch_urls.append(f"http://localhost:{host_port}")
+            if ports:
+                for container_port, host_bindings in ports.items():
+                    if host_bindings:
+                        # A container port can be bound to multiple host ports
+                        for binding in host_bindings:
+                            # We only want to show ports that are bound to an external interface
+                            # We want to show all host ports, regardless of HostIp
+                            host_port = binding['HostPort']
+                            # We assume http for simplicity. A more advanced implementation
+                            # might try to detect https.
+                            launch_urls.append(f"http://localhost:{host_port}")
             
-            if launch_urls:
-                launchable_containers.append({
-                    "name": container.name,
-                    "urls": launch_urls,
-                    "status": container.status
-                })
+            launchable_containers.append({
+                "name": container.name,
+                "urls": launch_urls,
+                "status": container.status
+            })
     except APIError as e:
         # If we can't get the list of containers, we'll just return an empty list
         # and flash a message to the user. This makes the application more resilient.
